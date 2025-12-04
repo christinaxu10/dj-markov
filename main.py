@@ -126,6 +126,39 @@ def song_log_likelihood_ngram(song, n, ngram_probs):
 
     return ll
 
+def top_k_accuracy_ngram(song, n, ngram_probs, k=5):
+    # song: list of chords in song
+    # n: order of the n-gram model
+    # ngram_probs: DataFrame with index=evidence, columns=next chords
+    # k: number of top predictions to consider
+    
+    correct = 0
+    total = 0
+    
+    if len(song) < n:
+        return 0.0
+    
+    for t in range(n-1, len(song)):
+        if n == 1:
+            context = ""
+        else:
+            context = " ".join(song[t-(n-1):t])
+        
+        target = song[t]
+        
+        try:
+            prob_row = ngram_probs.loc[context]
+            
+            top_k_chords = prob_row.nlargest(k).index.tolist()
+            
+            if target in top_k_chords:
+                correct += 1
+            total += 1
+            
+        except KeyError:
+            total += 1
+    
+    return correct / total if total > 0 else 0.0
 
 def main():
     # df = pd.read_csv("hf://datasets/ailsntua/Chordonomicon/chordonomicon_v2.csv",usecols=["chords", "main_genre"])
@@ -175,6 +208,7 @@ def main():
 
     # 2d dataframe
     transition_matrix = bigram["prob"].unstack(fill_value=0.0)
+    
 
 
 if __name__ == "__main__":
